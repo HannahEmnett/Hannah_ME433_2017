@@ -75,7 +75,7 @@ int main() {
         //24000000 is one second 24MHz 
         //for 1000Hz interrupt, 24000
         while (!PORTBbits.RB4){;}
-        if (_CP0_GET_COUNT()>= MAX_TIME) {
+        if (_CP0_GET_COUNT()>= MAX_TIME/2) {
             LATAINV=0x10;
             _CP0_SET_COUNT(0);
         }
