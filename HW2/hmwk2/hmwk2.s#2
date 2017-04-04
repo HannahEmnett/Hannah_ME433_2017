@@ -13370,20 +13370,20 @@ Source: http://www2.produktinfo.conrad.com/datenblaetter/700000-724999/705152-da
 <part name="GND6" library="components" deviceset="GND" device=""/>
 <part name="+3V1" library="components" deviceset="+3V3" device=""/>
 <part name="GND7" library="components" deviceset="GND" device=""/>
-<part name="LED1" library="components" deviceset="LED" device="3MM"/>
+<part name="LED1" library="components" deviceset="LED" device="3MM" value="Green"/>
 <part name="R2" library="components" deviceset="R-US_" device="0207/10" value="330ohm"/>
 <part name="GND8" library="components" deviceset="GND" device=""/>
-<part name="C2" library="components" deviceset="CPOL-US" device="E5-5"/>
+<part name="C2" library="components" deviceset="CPOL-US" device="E5-5" value="10uf"/>
 <part name="C3" library="components" deviceset="CPOL-US" device="E5-5" value="10uf"/>
 <part name="GND9" library="components" deviceset="GND" device=""/>
 <part name="GND10" library="components" deviceset="GND" device=""/>
 <part name="C4" library="components" deviceset="C-US" device="025-025X050" value="0.1uf"/>
 <part name="GND11" library="components" deviceset="GND" device=""/>
-<part name="C5" library="components" deviceset="C-US" device="025-025X050"/>
+<part name="C5" library="components" deviceset="C-US" device="025-025X050" value="0.1uf"/>
 <part name="GND12" library="components" deviceset="GND" device=""/>
 <part name="QF1" library="components" deviceset="8M10AHC49T" device=""/>
 <part name="GND13" library="components" deviceset="GND" device=""/>
-<part name="C6" library="components" deviceset="C-US" device="025-025X050"/>
+<part name="C6" library="components" deviceset="C-US" device="025-025X050" value="0.1uf"/>
 <part name="GND14" library="components" deviceset="GND" device=""/>
 <part name="GND15" library="components" deviceset="GND" device=""/>
 <part name="R3" library="components" deviceset="R-US_" device="0207/10" value="10kohm"/>
@@ -13723,7 +13723,6 @@ Source: http://www2.produktinfo.conrad.com/datenblaetter/700000-724999/705152-da
 <net name="VIN" class="0">
 <segment>
 <pinref part="J1" gate="G$1" pin="VBUS"/>
-<wire x1="-10.16" y1="73.66" x2="-5.08" y2="73.66" width="0.1524" layer="91"/>
 <label x="-7.62" y="71.12" size="1.778" layer="95"/>
 <wire x1="-10.16" y1="73.66" x2="-5.08" y2="73.66" width="0.1524" layer="91"/>
 </segment>
