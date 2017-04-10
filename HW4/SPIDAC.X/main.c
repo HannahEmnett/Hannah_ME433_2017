@@ -13,7 +13,7 @@
 #pragma config ICESEL = 0b11 // use PGED1 and PGEC1
 #pragma config PWP = 0x3f//0b111111111 // no write protect
 #pragma config BWP = 0b0 // no boot write protect
-#pragma config CP = 0b0 // no code protect
+#pragma config CP = 0 // no code protect
 
 // DEVCFG1
 #pragma config FNOSC = 0b011 // use primary oscillator with pll
@@ -45,8 +45,8 @@
 #define MAX_TIME 24000
 #define sampleRate 1000
 #define freq 10
-char make_sine();
-char make_tri();
+void make_sine();
+void make_tri();
 char sine[sampleRate];
 char tri[sampleRate];
 
@@ -71,29 +71,30 @@ int main() {
     __builtin_enable_interrupts();
 
     spi_init();
-    make_sine();
+    //make_sine();
     make_tri();
+    int j=0;
     while(1) {
-        char j=0;
-        while (j=0, j< sampleRate, j++){
-            setVoltage(0,sine[j]); //1 for B, 0 for A
-            setVoltage(1,tri[j]);
+        int j=0;
+        for (j=0; j< sampleRate; j++) {
+            //setVoltage(0,sine[j]); //1 for B, 0 for A
+            setVoltage(0,tri[j]);
         }
         
         
     }
 }
 //the DAC outputs a 10Hz sine wave on VoutA and a 5Hz triangle wave on VoutB, updating the values 1000 times a second 
-char make_sine(){
-    char i=0;
-    for (i=0, i<sampleRate, i++) {
-        sine[i] = 3*sin(freq * (2 * pi) * i /sampleRate);
+void make_sine(){
+    int i=0;
+    for (i=0; i<sampleRate; i++) {
+        sine[i] = sin(freq * (2 * 3.14) * i /sampleRate);
     }
 }
-char make_tri(){
-    char i=0;
-    for (i=0, i<sampleRate, i++){
-        tri[i]= 3*(i/sampleRate);
+void make_tri(){
+    int i=0;
+    for (i=0; i<sampleRate; i++){
+        tri[i]= (255*i/sampleRate);
     }
     
 }

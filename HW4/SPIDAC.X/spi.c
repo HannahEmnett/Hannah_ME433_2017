@@ -16,7 +16,7 @@
 // 
 // Only uses the SRAM's sequential mode
 //
-#define CS LATAbits.LATA1       // chip select pin
+       // chip select pin
 
 // send a byte via spi and return the response
 unsigned char spi_io(unsigned char o) {
@@ -33,13 +33,14 @@ void spi_init() {
   // the chip select pin is used by the sram to indicate
   // when a command is beginning (clear CS to low) and when it
   // is ending (set CS high)
-  TRISAbits.TRISA1=0;
-  CS = 1;
+  TRISAbits.TRISA4=0;
+  LATAbits.LATA4 = 1;
+  
 
   // Master - SPI4, pins are: SDI4(F4), SDO4(F5), SCK4(F13).  
   // we manually control SS4 as a digital output (F12)
   // since the pic is just starting, we know that spi is off. We rely on defaults here
- 
+  
   // setup spi4
   SPI1CON = 0;              // turn off the spi module and reset it
   SPI1BUF;                  // clear the rx buffer by reading from it
@@ -48,7 +49,7 @@ void spi_init() {
   SPI1CONbits.CKE = 1;      // data changes when clock goes from hi to lo (since CKP is 0)
   SPI1CONbits.MSTEN = 1;    // master operation
   SPI1CONbits.ON = 1;       // turn on spi 1
-
+  RPA1Rbits.RPA1R=0b0011;
                             // send a ram set status command.
   //CS = 0;                   // enable the ram
   //spi_io(0x01);             // ram write status
@@ -58,16 +59,17 @@ void spi_init() {
 
 // write len bytes to the ram, starting at the address addr
 void setVoltage(char cha, char volt){
-    char val1=0, val2=0;
+    char val1=0, val2=0,valval=0;
+    valval= volt >> 4;
     if (cha == 1) {
-        val1= 0b1111 + volt >> 4; 
+        val1= 0b11110000 || valval; 
     }
-    else {val1= 0b0111 + volt >> 4;}
-    val2 = volt << 4;
-    CS=0;
+    else {val1= 0b01110000 || valval;}
+    val2 =  volt << 4;
+    LATAbits.LATA4=0;
     spi_io(val1);
     spi_io(val2);
-    CS=1;
+    LATAbits.LATA4=1;
 }
 /*void ram_write(unsigned short addr, const char data[], int len) {
   int i = 0;
