@@ -72,11 +72,11 @@ int main() {
     __builtin_enable_interrupts();
 
     spi_init();
-    //make_sine();
+    make_sine();
     make_tri();
     char j=0;
     while(1) {
-            //setVoltage(0,sine[j]); //1 for B, 0 for A
+            setVoltage(0,sine[j]); //1 for B, 0 for A
             _CP0_SET_COUNT(0);
             while (_CP0_GET_COUNT()<24000){;}
             setVoltage(1, tri[j]);
@@ -86,7 +86,7 @@ int main() {
             if (j==100){
                 j=0;
             }
-        }
+        
         
         
     }
@@ -94,15 +94,15 @@ int main() {
 //the DAC outputs a 10Hz sine wave on VoutA and a 5Hz triangle wave on VoutB, updating the values 1000 times a second 
 void make_sine(){
     int i=0;
-    for (i=0; i<sampleRate; i++) {
+    for (i=0; i<100; i++) {
         temp=255.0/2.0 + 255.0/2.0* sin((2 * 3.14) * i /100.0);
         sine[i] =  (unsigned char) temp;
     }
 }
 void make_tri(){
     int i=0;
-    for (i=0; i<sampleRate; i++){
-        temp= i*(255.0/100.0)(i/1000.0)
+    for (i=0; i<100; i++){
+        temp= 2*i*(255.0/100.0);
         tri[i]= (unsigned char) temp;
     }
     

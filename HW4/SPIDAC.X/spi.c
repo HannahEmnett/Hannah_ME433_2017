@@ -33,7 +33,11 @@ void spi_init() {
   // the chip select pin is used by the sram to indicate
   // when a command is beginning (clear CS to low) and when it
   // is ending (set CS high)
-  
+  RPA1Rbits.RPA1R=0b0011; //A1
+  SDI1Rbits.SDI1R=0b0100; //B8
+  SS1Rbits.SS1R=0000;
+  TRISAbits.TRISA4=0;
+  CS = 1;
   
 
   // Master - SPI4, pins are: SDI4(F4), SDO4(F5), SCK4(F13).  
@@ -43,7 +47,7 @@ void spi_init() {
   // setup spi4
   SPI1CON = 0;              // turn off the spi module and reset it
   SPI1BUF;                  // clear the rx buffer by reading from it
-  SPI1BRG = 0x5DBF;            // baud rate to 10 MHz [SPI4BRG = (80000000/(2*desired))-1] 10MHz 0x3, 1MHz, 0x17, 100khz 0xEF
+  SPI1BRG = 0x17;            // baud rate to 10 MHz [SPI4BRG = (80000000/(2*desired))-1] 10MHz 0x3, 1MHz, 0x17, 100khz 0xEF
   SPI1STATbits.SPIROV = 0;  // clear the overflow bit
   SPI1CONbits.CKE = 1;      // data changes when clock goes from hi to lo (since CKP is 0)
   SPI1CONbits.MSTEN = 1;    // master operation
@@ -51,11 +55,7 @@ void spi_init() {
   //SPI1CONbits.MODE32=0;
   //SPI1CONbits.MODE16=0;
   
-  RPA1Rbits.RPA1R=0b0011; //A1
-  SDI1Rbits.SDI1R=0b0100; //B8
-  SS1Rbits.SS1R=0000;
-  TRISAbits.TRISA4=0;
-  CS = 1;
+  
   SPI1CONbits.ON = 1;       // turn on spi 1                          // send a ram set status command.
   //CS = 0;                   // enable the ram
   //spi_io(0x01);             // ram write status
@@ -74,14 +74,11 @@ void setVoltage(unsigned char cha, unsigned char volt){
         val1= (unsigned char) (0b01110000 | valval);
     }
     val2 = (unsigned char) volt << 4;
-    char n=0;
-    CS = 0;
     CS=0;
-    n=spi_io(val1);
+    spi_io(val1);
     _CP0_SET_COUNT(0);
     while (_CP0_GET_COUNT()<2400){;}
-    n=spi_io(val2);
-    CS= 1;
+    spi_io(val2);
     CS=1;
 }
 /*void ram_write(unsigned short addr, const char data[], int len) {
