@@ -1,4 +1,4 @@
-#include "i2c_slave.h"
+
 #include "i2c_master_noint.h"
 // Demonstrate I2C by having the I2C1 talk to I2C5 on the same PIC32 (PIC32MX795F512H)
 // Master will use SDA1 (D9) and SCL1 (D10).  Connect these through resistors to
@@ -7,27 +7,26 @@
 // SDA5 -> SDA1
 // SCL5 -> SCL1
 // Two bytes will be written to the slave and then read back to the slave.
-#define SLAVE_ADDR 0x32
+#define SLAVE_ADDR 0x6  //0x32
 
 int main() {
   // some initialization function to set the right speed setting
-  char buf[100] = {};                       // buffer for sending messages to the user
+  
   unsigned char master_write0 = 0xCD;       // first byte that master writes
   unsigned char master_write1 = 0x91;       // second byte that master writes
   unsigned char master_read0  = 0x00;       // first received byte
   unsigned char master_read1  = 0x00;       // second received byte
 
   // some initialization function to set the right speed setting
-  Startup(); 
+  //Startup(); 
   __builtin_disable_interrupts();
-  i2c_slave_setup(SLAVE_ADDR);              // init I2C5, which we use as a slave 
+  //i2c_slave_setup(SLAVE_ADDR);              // init I2C5, which we use as a slave 
                                             //  (comment out if slave is on another pic)
   i2c_master_setup();                       // init I2C2, which we use as a master
   __builtin_enable_interrupts();
   
   while(1) {
-    WriteUART3("Master: Press Enter to begin transmission.\r\n");
-    ReadUART3(buf,2);
+    
     i2c_master_start();                     // Begin the start sequence
     i2c_master_send(SLAVE_ADDR << 1);       // send the slave address, left shifted by 1, 
                                             // which clears bit 0, indicating a write
@@ -42,12 +41,7 @@ int main() {
     i2c_master_ack(1);                      // send NACK (1):  master needs no more bytes
     i2c_master_stop();                      // send STOP:  end transmission, give up bus
 
-    sprintf(buf,"Master Wrote: 0x%x 0x%x\r\n", master_write0, master_write1);
-    WriteUART3(buf);
-    sprintf(buf,"Master Read: 0x%x 0x%x\r\n", master_read0, master_read1);
-    WriteUART3(buf);
-    ++master_write0;                        // change the data the master sends
-    ++master_write1;
+    
   }
   return 0;
 }
