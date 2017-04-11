@@ -43,13 +43,13 @@ void spi_init() {
   // setup spi4
   SPI1CON = 0;              // turn off the spi module and reset it
   SPI1BUF;                  // clear the rx buffer by reading from it
-  SPI1BRG = 0xAD;            // baud rate to 10 MHz [SPI4BRG = (80000000/(2*desired))-1] 10MHz 0x3, 1MHz, 0x17, 100khz 0xEF
+  SPI1BRG = 0x5DBF;            // baud rate to 10 MHz [SPI4BRG = (80000000/(2*desired))-1] 10MHz 0x3, 1MHz, 0x17, 100khz 0xEF
   SPI1STATbits.SPIROV = 0;  // clear the overflow bit
   SPI1CONbits.CKE = 1;      // data changes when clock goes from hi to lo (since CKP is 0)
   SPI1CONbits.MSTEN = 1;    // master operation
   SPI1CONbits.SSEN=0;
-  SPI1CONbits.MODE32=0;
-  SPI1CONbits.MODE16=0;
+  //SPI1CONbits.MODE32=0;
+  //SPI1CONbits.MODE16=0;
   
   RPA1Rbits.RPA1R=0b0011; //A1
   SDI1Rbits.SDI1R=0b0100; //B8
@@ -64,20 +64,22 @@ void spi_init() {
 }
 
 // write len bytes to the ram, starting at the address addr
-void setVoltage(char cha, char volt){
+void setVoltage(unsigned char cha, unsigned char volt){
     unsigned char val1=0, val2=0, valval=0;
     valval= (unsigned char) volt >> 4;
     if (cha == 1) {
-        val1= (unsigned char) (0b11110000 || valval); 
+        val1= (unsigned char) (0b11110000 | valval); 
     }
     else {
-        val1= (unsigned char) (0b01110000 || valval);
+        val1= (unsigned char) (0b01110000 | valval);
     }
     val2 = (unsigned char) volt << 4;
     char n=0;
     CS = 0;
     CS=0;
     n=spi_io(val1);
+    _CP0_SET_COUNT(0);
+    while (_CP0_GET_COUNT()<2400){;}
     n=spi_io(val2);
     CS= 1;
     CS=1;

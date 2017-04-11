@@ -47,8 +47,9 @@
 #define freq 10
 void make_sine();
 void make_tri();
-char sine[sampleRate];
-char tri[sampleRate];
+unsigned char sine[sampleRate];
+unsigned char tri[sampleRate];
+double temp;
 
 int main() {
 
@@ -73,12 +74,18 @@ int main() {
     spi_init();
     //make_sine();
     make_tri();
-    
+    char j=0;
     while(1) {
-        int j=0;
-        for (j=0; j< sampleRate; j++) {
             //setVoltage(0,sine[j]); //1 for B, 0 for A
+            _CP0_SET_COUNT(0);
+            while (_CP0_GET_COUNT()<24000){;}
             setVoltage(1, tri[j]);
+            _CP0_SET_COUNT(0);
+            while (_CP0_GET_COUNT()<24000){;}
+            j++;
+            if (j==100){
+                j=0;
+            }
         }
         
         
@@ -88,13 +95,15 @@ int main() {
 void make_sine(){
     int i=0;
     for (i=0; i<sampleRate; i++) {
-        sine[i] =  255.0* sin(freq * (2 * 3.14) * i /sampleRate);
+        temp=255.0/2.0 + 255.0/2.0* sin((2 * 3.14) * i /100.0);
+        sine[i] =  (unsigned char) temp;
     }
 }
 void make_tri(){
     int i=0;
     for (i=0; i<sampleRate; i++){
-        tri[i]= 255.0*(i/1000.0);
+        temp= i*(255.0/100.0)(i/1000.0)
+        tri[i]= (unsigned char) temp;
     }
     
 }
