@@ -73,12 +73,12 @@ int main() {
     spi_init();
     //make_sine();
     make_tri();
-    int j=0;
+    
     while(1) {
         int j=0;
         for (j=0; j< sampleRate; j++) {
             //setVoltage(0,sine[j]); //1 for B, 0 for A
-            setVoltage(0,tri[j]);
+            setVoltage(1, tri[j]);
         }
         
         
@@ -88,13 +88,13 @@ int main() {
 void make_sine(){
     int i=0;
     for (i=0; i<sampleRate; i++) {
-        sine[i] = sin(freq * (2 * 3.14) * i /sampleRate);
+        sine[i] =  255.0* sin(freq * (2 * 3.14) * i /sampleRate);
     }
 }
 void make_tri(){
     int i=0;
     for (i=0; i<sampleRate; i++){
-        tri[i]= (255*i/sampleRate);
+        tri[i]= 255.0*(i/1000.0);
     }
     
 }

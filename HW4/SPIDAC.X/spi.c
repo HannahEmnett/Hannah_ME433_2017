@@ -1,6 +1,6 @@
-
-#include "spi.h"
 #include <xc.h>
+#include "spi.h"
+
  // constants, funcs for startup and UART
 // Demonstrates spi by accessing external ram
 // PIC is the master, ram is the slave
@@ -16,12 +16,12 @@
 // 
 // Only uses the SRAM's sequential mode
 //
-       // chip select pin
+#define CS LATAbits.LATA4     // chip select pin
 
 // send a byte via spi and return the response
 unsigned char spi_io(unsigned char o) {
   SPI1BUF = o;
-  while(!SPI1STATbits.SPIRBF) { // wait to receive the byte
+  while(!SPI1STATbits.SPIRBF) { // wait to receive the byte SPIRBF
     ;
   }
   return SPI1BUF;
@@ -33,8 +33,7 @@ void spi_init() {
   // the chip select pin is used by the sram to indicate
   // when a command is beginning (clear CS to low) and when it
   // is ending (set CS high)
-  TRISAbits.TRISA4=0;
-  LATAbits.LATA4 = 1;
+  
   
 
   // Master - SPI4, pins are: SDI4(F4), SDO4(F5), SCK4(F13).  
@@ -44,13 +43,20 @@ void spi_init() {
   // setup spi4
   SPI1CON = 0;              // turn off the spi module and reset it
   SPI1BUF;                  // clear the rx buffer by reading from it
-  SPI1BRG = 0x17;            // baud rate to 10 MHz [SPI4BRG = (80000000/(2*desired))-1] 10MHz 0x3, 1MHz, 0x17
+  SPI1BRG = 0xAD;            // baud rate to 10 MHz [SPI4BRG = (80000000/(2*desired))-1] 10MHz 0x3, 1MHz, 0x17, 100khz 0xEF
   SPI1STATbits.SPIROV = 0;  // clear the overflow bit
   SPI1CONbits.CKE = 1;      // data changes when clock goes from hi to lo (since CKP is 0)
   SPI1CONbits.MSTEN = 1;    // master operation
-  SPI1CONbits.ON = 1;       // turn on spi 1
-  RPA1Rbits.RPA1R=0b0011;
-                            // send a ram set status command.
+  SPI1CONbits.SSEN=0;
+  SPI1CONbits.MODE32=0;
+  SPI1CONbits.MODE16=0;
+  
+  RPA1Rbits.RPA1R=0b0011; //A1
+  SDI1Rbits.SDI1R=0b0100; //B8
+  SS1Rbits.SS1R=0000;
+  TRISAbits.TRISA4=0;
+  CS = 1;
+  SPI1CONbits.ON = 1;       // turn on spi 1                          // send a ram set status command.
   //CS = 0;                   // enable the ram
   //spi_io(0x01);             // ram write status
   //spi_io(0x41);             // sequential mode (mode = 0b01), hold disabled (hold = 0)
@@ -59,17 +65,22 @@ void spi_init() {
 
 // write len bytes to the ram, starting at the address addr
 void setVoltage(char cha, char volt){
-    char val1=0, val2=0,valval=0;
-    valval= volt >> 4;
+    unsigned char val1=0, val2=0, valval=0;
+    valval= (unsigned char) volt >> 4;
     if (cha == 1) {
-        val1= 0b11110000 || valval; 
+        val1= (unsigned char) (0b11110000 || valval); 
     }
-    else {val1= 0b01110000 || valval;}
-    val2 =  volt << 4;
-    LATAbits.LATA4=0;
-    spi_io(val1);
-    spi_io(val2);
-    LATAbits.LATA4=1;
+    else {
+        val1= (unsigned char) (0b01110000 || valval);
+    }
+    val2 = (unsigned char) volt << 4;
+    char n=0;
+    CS = 0;
+    CS=0;
+    n=spi_io(val1);
+    n=spi_io(val2);
+    CS= 1;
+    CS=1;
 }
 /*void ram_write(unsigned short addr, const char data[], int len) {
   int i = 0;
