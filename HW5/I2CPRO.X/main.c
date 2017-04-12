@@ -55,7 +55,7 @@
 // Two bytes will be written to the slave and then read back to the slave.
 #define SLAVE_ADDR 0x20
 void initExpand();
-void setExp(unsigned char pin, unsigned char level);
+void setExp(unsigned char pin);
 unsigned char getExp();
 
 int main() {
@@ -80,7 +80,11 @@ int main() {
 
   // some initialization function to set the right speed setting
   i2c_master_setup();                       // init I2C2, which we use as a master
-  initExpand();
+  i2c_master_start();
+  i2c_master_send(SLAVE_ADDR<<1 | 0);
+  i2c_master_send(0b00000000);
+  i2c_master_send(0b11110000);
+  i2c_master_stop(); 
   unsigned char val =0;
   while(1) {
     
@@ -98,36 +102,46 @@ int main() {
 //    i2c_master_ack(1);                      // send NACK (1):  master needs no more bytes
 //    i2c_master_stop();                      // send STOP:  end transmission, give up bus
 
-      setExp(0x00,0x01);
-      setExp(0xFF,0xFF);
+      //setExp(0b00001111);
+      //setExp(0b00);
       //val= getExp();
-      //if (val==0x00){setExp(0x01, 0x01);}
+    char r=0;
+    i2c_master_start();
+    i2c_master_send(SLAVE_ADDR<<1 | 0);
+    i2c_master_send(0x09);
+    i2c_master_restart();
+    i2c_master_send((SLAVE_ADDR<<1) | 1);
+    r=i2c_master_recv();
+    i2c_master_ack(1);
+    i2c_master_stop();
+      if (r==(0b10000000)){LATAbits.LATA4=0;}
+      else {LATAbits.LATA4=1;}
       //else {setExp(0x01,0x01);}
-      //_CP0_SET_COUNT(0);
-      //while (_CP0_GET_COUNT()<24000);
+      _CP0_SET_COUNT(0);
+      while (_CP0_GET_COUNT()<24000);
     
   }  
 }
 
 void initExpand(){
     i2c_master_start();
-    i2c_master_send(SLAVE_ADDR<<1);
+    i2c_master_send(SLAVE_ADDR<<1 | 0);
     i2c_master_send(0x00);
-    i2c_master_send(0xF0);
+    i2c_master_send(0xf0);
     i2c_master_stop(); 
 }
-void setExp(unsigned char pin, unsigned char level){  //pin and level in hex
+void setExp(unsigned char pin){  //pin and level in hex
     i2c_master_start();
-    i2c_master_send(SLAVE_ADDR<<1);
+    i2c_master_send(SLAVE_ADDR<<1 | 0);
     i2c_master_send(0x09);
-    i2c_master_send(pin);
-    i2c_master_send(level);
+    i2c_master_send(0b00000001);
+    //i2c_master_send(level);
     i2c_master_stop();
 }
 unsigned char getExp(){
     unsigned char r=0;
     i2c_master_start();
-    i2c_master_send(SLAVE_ADDR<<1);
+    i2c_master_send(SLAVE_ADDR<<1 | 0);
     i2c_master_send(0x09);
     i2c_master_restart();
     i2c_master_send((SLAVE_ADDR<<1) | 1);
