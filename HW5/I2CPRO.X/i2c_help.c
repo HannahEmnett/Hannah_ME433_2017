@@ -8,7 +8,7 @@
 void i2c_master_setup(void) {
   
     
-    I2C2BRG = 0xE9;            // I2CBRG = [1/(2*Fsck) - PGD]*Pblck - 2 
+    I2C2BRG = 233;            // I2CBRG = [1/(2*Fsck) - PGD]*Pblck - 2 
                                     // look up PGD for your PIC32 PGD=104ns so 233 is E9
   
   I2C2CONbits.ON = 1;               // turn on the I2C1 module
