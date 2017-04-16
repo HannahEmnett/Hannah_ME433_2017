@@ -8,7 +8,9 @@
 #include<sys/attribs.h>  // __ISR macro
 #include <stdio.h>
 #include <stdlib.h>
+#include "math.h"
 #include "ILI9163C.h" 
+
 
 
 // DEVCFG0
@@ -46,11 +48,9 @@
 #pragma config FUSBIDIO = ON // USB pins controlled by USB module
 #pragma config FVBUSONIO = ON // USB BUSON controlled by USB module
 
-#define SLAVE_ADDR 0b0100000 //0x20
-
-void initExpand();
-void setExp(unsigned char pin, unsigned char level);
-unsigned char getExp();
+void initBar();
+void dispstr(char * str, unsigned short xpos, unsigned short ypos, unsigned short c1, unsigned short c2);
+void dispc(char c, unsigned short xpos, unsigned short ypos, unsigned short c1, unsigned short c2);
 
 int main() {
     __builtin_disable_interrupts();
@@ -67,21 +67,68 @@ int main() {
     TRISAbits.TRISA4=0;
     TRISBbits.TRISB4=1;
     
+    SPI1_init();
+    LCD_init();
+    LCD_clearScreen(BLACK);
+    
     __builtin_enable_interrupts();
     
-    // sprintf(msg, "hello %d", i)
-    //dispstr(char string, x, y, c1, c2)
-    // int i =0 
-    //while msg[i]!= 0
-    //dispchar(char c, x ,y, c1, c2)
-// row= c-0x20
-    //for i= 0:4
-    //if x+1 <128 
-    //for j=0:7
-    //if ascii[row][i]>> j & 1 == 1
-    //if (y+j< 128)
-    //draw (x+i,y+j, color)
- // some initialization function to set the right speed setting
-  // some initialization function to set the right speed setting
+    char buff[128];
+    char barbuff[5];
+    int num =0,mid=64;
+    sprintf(buff, "hello world!");
+    dispstr(buff,28,32,WHITE,BLACK);
+    sprintf(buff, "              ");
+    sprintf(barbuff, " ");
+    initBar();
+    
+    while (1) {
+        num=100;
+        while(num>=0){
+            sprintf(buff, "%d", num);
+            dispstr(buff,100,32,WHITE,BLACK);
+            if (num>=50){dispc(barbuff[0],mid+num-50,45,WHITE,BLACK);} 
+            else {dispc(barbuff[0],mid-(50-num),45,BLACK,WHITE);}
+            if (num==0){initBar();}
+            _CP0_SET_COUNT(0);
+            while (_CP0_GET_COUNT()<48000000/2/5); //5hz
+            dispstr(buff,100,32,BLACK, BLACK);
+            sprintf(buff, "    ");
+            num--;
+        }
+    }
+}
+
+void initBar(){
+    char bar1=0;
+    char buff3[2];
+    sprintf(buff3, " "); 
+    for (bar1 =0; bar1<=50; bar1++){
+        dispc(buff3[0],bar1+64,45,BLACK,WHITE);
+        dispc(buff3[0],-bar1+64,45,BLACK,BLACK);
+    }
+}
+
+void dispstr(char * str, unsigned short xpos, unsigned short ypos, unsigned short c1, unsigned short c2) {
+    int k=0;
+    while (str[k]){
+        dispc(str[k], xpos+k*5, ypos, c1, c2);
+        k++;
+    }
+}
+
+void dispc(char c, unsigned short xpos, unsigned short ypos, unsigned short c1, unsigned short c2) {
+    int i=0, j=0, row=0;
+    row= c - 0x20;
+    for (i=0; i<=4; i++) {
+        if ((xpos+i) <128) {
+            for (j=0; j<=7; j++) {
+                if ((ypos+j)< 128){
+                    if (ASCII[row][i]>> j & 1 == 1) {LCD_drawPixel(xpos+i, ypos+j, c1);}
+                    else {LCD_drawPixel(xpos+i, ypos+j, c2);}
+                }
+            }
+        }
+    }
 }
   
