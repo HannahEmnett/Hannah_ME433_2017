@@ -79,9 +79,12 @@ int main() {
     sprintf(buff, "hello world!");
     dispstr(buff,28,32,WHITE,BLACK);
     sprintf(buff, "              ");
+    sprintf(buff, "FPS: ");
+    dispstr(buff,45,65,WHITE,BLACK);
+    sprintf(buff, "      ");
     sprintf(barbuff, " ");
     initBar();
-    
+    float time=0;
     while (1) {
         num=100;
         while(num>=0){
@@ -90,10 +93,14 @@ int main() {
             if (num>=50){dispc(barbuff[0],mid+num-50,45,WHITE,BLACK);} 
             else {dispc(barbuff[0],mid-(50-num),45,BLACK,WHITE);}
             if (num==0){initBar();}
-            _CP0_SET_COUNT(0);
+            time=(float) 24000000.0/_CP0_GET_COUNT();
+            sprintf(buff, "%4.2f", time);
+            dispstr(buff,75,65,WHITE,BLACK);
             while (_CP0_GET_COUNT()<48000000/2/5); //5hz
+            _CP0_SET_COUNT(0);
             dispstr(buff,100,32,BLACK, BLACK);
             sprintf(buff, "    ");
+            dispstr(buff,75,75,BLACK,BLACK);
             num--;
         }
     }
