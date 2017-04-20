@@ -71,26 +71,7 @@ int main() {
     
     __builtin_enable_interrupts();
     
-    initExpand();
-    
-
-//#include <stdio.h>
-    // sprintf(msg, "hello %d", i)
-    //dispstr(char string, x, y, c1, c2)
-    // int i =0 
-    //while msg[i]!= 0
-    //dispchar(char c, x ,y, c1, c2)
-// row= c-0x20
-    //for i= 0:4
-    //if x+1 <128 
-    //for j=0:7
-    //if ascii[row][i]>> j & 1 == 1
-    //if (y+j< 128)
-    //draw (x+i,y+j, color)
- // some initialization function to set the right speed setting
-  // some initialization function to set the right speed setting
-
-  
+    initExpand(); 
 
   while(1) {
       if (((getExp()>>7) & 1) ==1) {setExp(0,1);}
