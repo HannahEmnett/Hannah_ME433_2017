@@ -18,6 +18,8 @@
       <itemPath>i2c_master_noint.h</itemPath>
       <itemPath>main.c</itemPath>
       <itemPath>setup.h</itemPath>
+      <itemPath>helpfunc.c</itemPath>
+      <itemPath>helpfunc.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
