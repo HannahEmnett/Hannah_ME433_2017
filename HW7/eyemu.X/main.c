@@ -17,14 +17,15 @@ void initIMU();
 void setIMU(unsigned char add, unsigned char reg, unsigned char value);
 unsigned char getIMU(unsigned char add, unsigned char reg);
 void getMult(unsigned char add, unsigned char reg, unsigned char * data, int length);
-void drawBar(signed short accx, signed short accy, unsigned short c1, unsigned short c2);
+void drawBar(signed int xlen, signed int ylen, unsigned short c1, unsigned short c2);
 void dispstr(char * str, unsigned short xpos, unsigned short ypos, unsigned short c1, unsigned short c2);
 void dispc(char c, unsigned short xpos, unsigned short ypos, unsigned short c1, unsigned short c2);
 void procIMU(unsigned char * data, signed short * procdat, int length);
 void drawArrow(unsigned short xpos, unsigned short ypos, unsigned short c1, unsigned short c2, char xside);
+void drawBarChar(unsigned short xpos, unsigned short ypos, unsigned short c1, unsigned short c2,char xside);
 
-char cury=0;
-char curx=0;
+signed char cury=0;
+signed char curx=0;
 
 int main() {
     __builtin_disable_interrupts();
@@ -75,57 +76,122 @@ int main() {
 //        for (n=0;n<7;n++){
 //            accval[n]=accval[n]/4;
 //            }
+        signed int xlen1=0, ylen1=0;
         getMult(SLAVE_ADDR,0x20,rawval,14);
         procIMU(rawval,accval,14);
-        drawBar(accval[4],accval[5], WHITE, BLACK);
-        sprintf(buff, "T: %5.2d, GX: %5.2d", accval[0],accval[1]);
-        dispstr(buff, 10, 10, WHITE, BLACK);
-        sprintf(buff, "GY: %5.2d, GZ: %5.2d", accval[2],accval[3]);
-        dispstr(buff, 10, 20, WHITE, BLACK);
+        xlen1=  (55.0*accval[4])/15000.0; 
+        ylen1= (55.0*accval[5])/15000.0; 
+        drawBar(xlen1,ylen1, WHITE, BLACK);
+//        sprintf(buff, "T: %5.2d, GX: %5.2d", accval[0],accval[1]);
+//        dispstr(buff, 10, 10, WHITE, BLACK);
+//        sprintf(buff, "GY: %5.2d, GZ: %5.2d", accval[2],accval[3]);
+//        dispstr(buff, 10, 20, WHITE, BLACK);
         sprintf(buff, "AX: %5.2d, AY: %5.2d", accval[4],accval[5]);
-        dispstr(buff, 10, 30, WHITE, BLACK);
-        sprintf(buff, "AZ: %5.2d", accval[6]);
-        dispstr(buff, 10, 40, WHITE, BLACK);
-        while (_CP0_GET_COUNT()<24000000/5);
+        dispstr(buff, 10, 10, WHITE, BLACK);
+//        sprintf(buff, "AZ: %5.2d", accval[6]);
+//        dispstr(buff, 10, 40, WHITE, BLACK);
+        
+        while (_CP0_GET_COUNT()<24000000/2);
+        //drawBar(xlen1,ylen1, BLACK, BLACK);
         
     }
 }
 
-void drawBar(signed short accx, signed short accy, unsigned short c1, unsigned short c2){
-    char xstart=64; char ystart=70; char buff3[2]; signed char xlen=0; signed char ylen=0; char i=0;
-    sprintf(buff3, "_|"); 
-    drawArrow(curx+5,ystart,c2,c2, 1);
-    drawArrow(xstart,cury+8,c2,c2, 0);
-    xlen= (char) (accx/40.0); 
-    ylen= (char) (accy/40.0); 
-    if (xlen> curx){
-        for (i=0; i<(xlen-curx); i=i+5){
-        dispc(buff3[0],xstart+i+curx,ystart,c1,c2);
+void drawBar(signed int xlen, signed int ylen, unsigned short c1, unsigned short c2){
+    char xstart=63; char ystart=63; char buff3[2]; signed char i=0;
+    //sprintf(buff3, "_|"); 
+    //drawArrow(curx+5+xstart,ystart,c2,c2, 1);
+    //drawArrow(xstart,cury+8+ystart,c2,c2, 0);
+//        if (xlen> curx){
+//            for (i=curx; i<(xlen-curx); i=i+5){
+//                if (i<0) dispc(buff3[0],xstart+i,ystart,c2,c2);
+//                else dispc(buff3[0],xstart+i,ystart,c1,c2);
+//            }
+//        }
+//        else {
+//            for (i=curx; i<(xlen-curx); i=i-5){
+//                if (i<0)dispc(buff3[0],xstart+i,ystart,c1,c2);
+//                else dispc(buff3[0],xstart+i,ystart,c2,c2);
+//            }
+//        }
+//        if (ylen> cury){
+//            for (i=cury; i<(ylen-cury); i=i+8){
+//                if (i<0) dispc(buff3[1],xstart,ystart+i,c2,c2);
+//                else dispc(buff3[1],xstart,ystart+i,c1,c2);
+//            }
+//        }
+//        else {
+//            for (i=cury; i<(ylen-cury); i=i-8){
+//                if (i<0) dispc(buff3[1],xstart,ystart+i,c1,c2);
+//                else dispc(buff3[1],xstart,ystart+i,c2,c2);
+//            }
+//        }
+//        curx=xlen; cury=ylen;
+        if (ylen > 0) {
+            if (ylen> 16) drawArrow(xstart, ystart-ylen,c1,c2,1);
+            for (i = 0; i < ylen; i=i+8) {
+                drawBarChar(xstart, ystart - i, c1,c2,0);
+                //dispc(buff3[1],xstart + 1, ystart - i, c1,c2);
+            }
+            for (i = ylen+8; i < 100; i=i+8) {
+                drawBarChar(xstart, ystart - i, c2, c2,0);
+                //dispc(buff3[1],xstart + 1, ystart - i, c2,c2);
+            }
+            for (i = 0; i > -100; i=i-8) {
+                drawBarChar(xstart, ystart - i, c2,c2,0);
+                //dispc(buff3[1],xstart + 1, ystart - i, c2,c2);
+            }
+        } else {
+            if (ylen< -16) drawArrow(xstart, ystart-ylen,c1,c2,3);
+            for (i = 0; i > ylen; i=i-8) {
+                drawBarChar(xstart, ystart - i, c1,c2,0);
+                //dispc(buff3[1],xstart + 1, ystart - i, c1,c2);
+            }
+            drawArrow(xstart, ystart+ylen,c1,c2,0);
+            for (i = ylen-8; i > -100; i=i-8) {
+                drawBarChar(xstart, ystart - i, c2,c2,0);
+                //dispc(buff3[1],xstart + 1, ystart - i, c2,c2);
+            }
+            for (i = 0; i < 100; i=i+8) {
+                drawBarChar(xstart, ystart - i, c2,c2,0);
+                //dispc(buff3[1],xstart + 1, ystart - i, c2,c2);
+            }
         }
-    }
-    else {
-        for (i=0; i<(xlen-curx); i=i-5){
-        dispc(buff3[0],xstart+i+curx,ystart,c2,c1);
+    if (xlen > 0) {
+            if (xlen>10) drawArrow(xstart-xlen, ystart,c1,c2,0);
+            for (i = 0; i < xlen; i=i+5) {
+                drawBarChar(xstart-i, ystart, c1,c2,1);
+                //dispc(buff3[1],xstart + 1, ystart - i, c1,c2);
+            }
+            for (i = xlen+5; i < 100; i=i+5) {
+                drawBarChar(xstart-i, ystart, c2, c2,1);
+                //dispc(buff3[1],xstart + 1, ystart - i, c2,c2);
+            }
+            for (i = 0; i > -100; i=i-5) {
+                drawBarChar(xstart-i, ystart, c2,c2,1);
+                //dispc(buff3[1],xstart + 1, ystart - i, c2,c2);
+            }
+        } else {
+            if (xlen<-10) drawArrow(xstart-xlen, ystart,c1,c2,2);
+            for (i = 0; i > xlen; i=i-5) {
+                drawBarChar(xstart-i, ystart, c1,c2,1);
+                //dispc(buff3[1],xstart + 1, ystart - i, c1,c2);
+            }
+            for (i = ylen-5; i > -100; i=i-5) {
+                drawBarChar(xstart-i, ystart, c2,c2,1);
+                //dispc(buff3[1],xstart + 1, ystart - i, c2,c2);
+            }
+            for (i = 0; i < 100; i=i+5) {
+                drawBarChar(xstart-i, ystart, c2,c2,1);
+                //dispc(buff3[1],xstart + 1, ystart - i, c2,c2);
+            }
         }
-    }
-    if (ylen> cury){
-        for (i=0; i<(ylen-cury); i=i+8){
-        dispc(buff3[1],xstart,ystart+i+cury,c1,c2);
-        }
-    }
-    else {
-        for (i=0; i<(ylen-cury); i=i-8){
-        dispc(buff3[1],xstart,ystart+i+cury,c2,c1);
-        }
-    }
-    curx=xlen; cury=ylen;
-    drawArrow(curx+5,ystart,c1,c2, 1);
-    drawArrow(xstart,cury+8,c1,c2, 0);
+    //drawArrow(curx+5,ystart,c1,c2, 1);
+    //drawArrow(xstart,cury+8,c1,c2, 0);
 }
-
-void drawArrow(unsigned short xpos, unsigned short ypos, unsigned short c1, unsigned short c2, char xside){
-    char arrx[5]= {0x00, 0x08, 0x1C, 0x3E, 0x7F};
-    char arry[5]= {0xC0, 0xF0, 0xFC, 0xF0, 0xC0};
+void drawBarChar(unsigned short xpos, unsigned short ypos, unsigned short c1, unsigned short c2,char xside){
+    char arrx[5]= {0x08, 0x08, 0x08, 0x08, 0x08};
+    char arry[5]= {0x00, 0x00, 0xff, 0x00, 0x00};
     int i=0, j=0;
     for (i=0; i<=4; i++) {
         if ((xpos+i) <128) {
@@ -135,8 +201,39 @@ void drawArrow(unsigned short xpos, unsigned short ypos, unsigned short c1, unsi
                         if (arrx[i]>> j & 1 == 1) {LCD_drawPixel(xpos+i, ypos+j, c1);}
                         else {LCD_drawPixel(xpos+i, ypos+j, c2);}
                     }
-                    else {
+                    else{
                         if (arry[i]>> j & 1 == 1) {LCD_drawPixel(xpos+i, ypos+j, c1);}
+                        else {LCD_drawPixel(xpos+i, ypos+j, c2);}
+                    }
+                }
+            }
+        }
+    }
+}
+void drawArrow(unsigned short xpos, unsigned short ypos, unsigned short c1, unsigned short c2, char xside){
+    char arrx[5]= {0x00, 0x08, 0x1C, 0x3E, 0x7F};
+    char arry[5]= {0xC0, 0xF0, 0xFC, 0xF0, 0xC0};
+    char arrnx[5]={0x7F, 0x3E, 0x1C, 0x08, 0x00};
+    char arrny[5]= {0x03,0x0F,0x3F, 0x0F, 0x03};
+    int i=0, j=0;
+    for (i=0; i<=4; i++) {
+        if ((xpos+i) <128) {
+            for (j=0; j<=7; j++) {
+                if ((ypos+j)< 128){
+                    if (xside==0){
+                        if (arrx[i]>> j & 1 == 1) {LCD_drawPixel(xpos+i, ypos+j, c1);}
+                        else {LCD_drawPixel(xpos+i, ypos+j, c2);}
+                    }
+                    else if (xside== 1){
+                        if (arry[i]>> j & 1 == 1) {LCD_drawPixel(xpos+i, ypos+j, c1);}
+                        else {LCD_drawPixel(xpos+i, ypos+j, c2);}
+                    }
+                    else if (xside==2){
+                        if (arrnx[i]>> j & 1 == 1) {LCD_drawPixel(xpos+i, ypos+j, c1);}
+                        else {LCD_drawPixel(xpos+i, ypos+j, c2);}
+                    }
+                    else {
+                        if (arrny[i]>> j & 1 == 1) {LCD_drawPixel(xpos+i, ypos+j, c1);}
                         else {LCD_drawPixel(xpos+i, ypos+j, c2);}
                     }
                 }
