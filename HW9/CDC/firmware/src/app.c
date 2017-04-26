@@ -56,7 +56,11 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include "app.h"
 #include <stdio.h>
 #include <xc.h>
+#include "ILI9163C.h" 
+#include "i2c_master_noint.h"
+#include "helpfunc.h"
 
+#define SLAVE_ADDR 0b1101011 
 // *****************************************************************************
 // *****************************************************************************
 // Section: Global Data Definitions
@@ -67,6 +71,9 @@ uint8_t APP_MAKE_BUFFER_DMA_READY dataOut[APP_READ_BUFFER_SIZE];
 uint8_t APP_MAKE_BUFFER_DMA_READY readBuffer[APP_READ_BUFFER_SIZE];
 int len, i = 0;
 int startTime = 0;
+char rawval[14];
+signed short accval[7];
+char buff[100];
 
 // *****************************************************************************
 /* Application Data
@@ -339,7 +346,23 @@ void APP_Initialize(void) {
 
     /* Set up the read buffer */
     appData.readBuffer = &readBuffer[0];
+    
+    TRISAbits.TRISA4=0;
+    TRISBbits.TRISB4=1;
+    ANSELBbits.ANSB2=0;
+    ANSELBbits.ANSB3=0;
 
+
+    SPI1_init();
+    LCD_init();
+    initIMU();
+
+    unsigned char r=0; //WhoAmI?
+    r= getIMU(SLAVE_ADDR, 0x0F);
+    if (r==0b01101001) LATAbits.LATA4=1;
+    else LATAbits.LATA4=0;
+
+    
     startTime = _CP0_GET_COUNT();
 }
 
@@ -370,7 +393,7 @@ void APP_Tasks(void) {
                 /* The Device Layer is not ready to be opened. We should try
                  * again later. */
             }
-
+            LCD_clearScreen(BLACK);
             break;
 
         case APP_STATE_WAIT_FOR_CONFIGURATION:
@@ -418,7 +441,7 @@ void APP_Tasks(void) {
             /* Check if a character was received or a switch was pressed.
              * The isReadComplete flag gets updated in the CDC event handler. */
 
-            if (appData.isReadComplete || _CP0_GET_COUNT() - startTime > (48000000 / 2 / 5)) {
+            if (appData.isReadComplete && readBuffer[0]== 0x72) {
                 appData.state = APP_STATE_SCHEDULE_WRITE;
             }
 
@@ -436,20 +459,35 @@ void APP_Tasks(void) {
             appData.writeTransferHandle = USB_DEVICE_CDC_TRANSFER_HANDLE_INVALID;
             appData.isWriteComplete = false;
             appData.state = APP_STATE_WAIT_FOR_WRITE_COMPLETE;
+            i=0;    
+            _CP0_SET_COUNT(0);
+            for (i=0; i<100; i++){
+ 
+                signed int xlen1=0, ylen1=0;
+                getMult(SLAVE_ADDR,0x20,rawval,14);
+                procIMU(rawval,accval,14);
+                //xlen1=  (55.0*accval[4])/15000.0; 
+                //ylen1= (55.0*accval[5])/15000.0; 
+                //drawBar(xlen1,ylen1, WHITE, BLACK);
+        //        sprintf(buff, "T: %5.2d, GX: %5.2d", accval[0],accval[1]);
+        //        dispstr(buff, 10, 10, WHITE, BLACK);
+        //        sprintf(buff, "GY: %5.2d, GZ: %5.2d", accval[2],accval[3]);
+        //        dispstr(buff, 10, 20, WHITE, BLACK);
+                //sprintf(buff, "AX: %5.2d, AY: %5.2d", accval[4],accval[5]);
+                //dispstr(buff, 10, 10, WHITE, BLACK);
+        //        sprintf(buff, "AZ: %5.2d", accval[6]);
+        //        dispstr(buff, 10, 40, WHITE, BLACK);
 
-            len = sprintf(dataOut, "%d\r\n", i);
-            i++;
-            if (appData.isReadComplete) {
-                USB_DEVICE_CDC_Write(USB_DEVICE_CDC_INDEX_0,
-                        &appData.writeTransferHandle,
-                        appData.readBuffer, 1,
-                        USB_DEVICE_CDC_TRANSFER_FLAGS_DATA_COMPLETE);
-            } else {
+
+                len = sprintf(dataOut, "%d, %d, %d, %d, %d, %d, %d\r\n",i, accval[2], accval[1], accval[0],accval[6],accval[5],accval[4]);
                 USB_DEVICE_CDC_Write(USB_DEVICE_CDC_INDEX_0,
                         &appData.writeTransferHandle, dataOut, len,
                         USB_DEVICE_CDC_TRANSFER_FLAGS_DATA_COMPLETE);
-                startTime = _CP0_GET_COUNT();
+                while (_CP0_GET_COUNT()<24000000/100);
+                //startTime = _CP0_GET_COUNT();
+                _CP0_SET_COUNT(0);
             }
+                
             break;
 
         case APP_STATE_WAIT_FOR_WRITE_COMPLETE:
