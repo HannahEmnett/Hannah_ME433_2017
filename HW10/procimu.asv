@@ -1,0 +1,169 @@
+function [data] = procimu(samples, num_weights, weights)
+colors = 'krbgcmyg';
+
+%OPEN SERIAL COMMUNICATION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+port = 'COM9';   % Set up serial port address
+if ~isempty(instrfind)                  % If PIC is not connected
+    fclose(instrfind);                  % Close serial
+    delete(instrfind);                  % ...
+end
+
+mySerial = serial(port, 'Baudrate', 230400, 'FlowControl', 'hardware'); %Connect to PIC
+set(mySerial,'TimeOut', 30)
+
+fprintf('Opening port %s...\n', port);    % Print to screen
+fopen(mySerial);
+
+
+
+    
+         fprintf(mySerial, [num2str(samples)]);
+         samps_conf = fscanf(mySerial, '%d');
+        
+        fprintf(mySerial, [num2str(num_weights)]);
+        num_weights_conf = fscanf(mySerial, '%d');
+        
+        doglog=zeros(num_weights);
+         for jj = 1:num_weights
+             fprintf(mySerial, '%d\n', weights(jj));
+             doglog(jj) = fscanf(mySerial, '%d');
+         end   
+        weights_conf = doglog;
+        
+        if ((samps_conf~=samples) || (num_weights_conf~=num_weights) || (weights_conf~=weights))
+         error('Configuration values not confirmed by PIC. %d %d %d\n', samps_conf , num_weights_conf, weights_conf);
+        end
+        
+        fprintf('Program starting.\n');
+        fprintf(mySerial, 'r\n');
+        
+        data=zeros(1,5);
+        arr = zeros(channels,st2); %Preallocate plot vector here
+        arr(:,:) = NaN; %Initialize plot vector as empty data
+        for i=1:100
+            for jj = 1:5
+                data(jj) = fscanf(mySerial, '%d');
+                arr(jj,i)=data(jj);
+            end  
+        end   
+        figure;
+        for xx = 1:5
+            plot (1:100, arr(xx,:),colors(xx))
+            hold on;
+        end
+        
+    %DUMP MODE
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    case 2             %
+        mode = 2;
+        st2=steps;
+        
+         fprintf(mySerial, [num2str(mode)]);
+         mode_conf = fscanf(mySerial, '%d');
+         
+        fprintf(mySerial, [num2str(channels)]);
+        channels_conf = fscanf(mySerial, '%d');
+        
+        fprintf(mySerial, [num2str(st2)]);
+        steps_conf = fscanf(mySerial, '%d');
+        
+         if ((steps_conf~=st2) || (channels_conf~=channels) || (mode_conf~= mode))
+          error('Configuration values not confirmed by PIC. %d %d %d\n', mode_conf, channels_conf, steps_conf);
+         end
+         
+         fprintf('Data collecting.\n');
+        
+        arr = zeros(channels,st2); %Preallocate plot vector here
+        arr(:,:) = NaN; %Initialize plot vector as empty data
+    
+        for i=1:st2
+            for jj = 1:channels
+                doglog(jj) = fscanf(mySerial, '%d');
+                arr(jj, i) = doglog(jj);
+            end  
+        end
+        figure
+        for xx = 1:channels
+            plot (1:st2, arr(xx,:),colors(xx))
+            hold on;
+        end
+        Data_Read= arr;
+
+ %PEGBOARD MODE
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    case 3
+        mode = 1;
+        
+        fprintf(mySerial, [num2str(mode)]);
+        mode_conf = fscanf(mySerial, '%d');
+        
+        fprintf(mySerial, [num2str(channels)]);
+        channels_conf = fscanf(mySerial, '%d');
+        
+        fprintf(mySerial, [num2str(steps)]);
+        steps_conf = fscanf(mySerial, '%d');
+        
+       if ((steps_conf~=steps) || (channels_conf~=channels) || (mode_conf~= mode))
+         error('Configuration values not confirmed by PIC. %d %d %d\n', mode_conf, channels_conf, steps_conf);
+       end
+       
+       fprintf('Data collecting.\n');
+        
+       whno= channels/4;
+        arr = zeros(channels,pegpts); %Preallocate plot vector here
+        arr(:,:) = NaN; %Initialize plot vector as empty data
+        Data_Read= zeros(channels,1);
+        rawval=zeros(channels,1);
+        mom= zeros(whno,1);
+        forc=zeros(whno,1);
+        
+        
+        h=figure;
+          for m=1:pegpts
+            for time=1:steps
+                for jj = 1:channels
+                    doglog(jj) = fscanf(mySerial, '%d');
+                    arr(jj, time) = doglog(jj);
+                end  
+            end
+            
+            for i=1:channels
+                rawval(i,m)=mean(arr(i,steps));
+                Data_Read(i,m)=rawval(i,m)-rawval(i,1);
+            end
+            Data_Read(2,m)=-Data_Read(2,m);
+            Data_Read(3,m)=-Data_Read(3,m);
+            for i=0:whno-1
+                mom(i+1,m)= (Data_Read((i*4)+1,m)-Data_Read((i*4)+2,m));
+                forc(i+1,m)=(Data_Read((i*4)+1,m)-Data_Read((i*4)+2,m))+(Data_Read((i*4)+3,m)-Data_Read((i*4)+4,m));
+            end 
+            subplot(3,1,1), plot(1:m, mom), title('Moments')
+            subplot(3,1,2), plot(1:m, forc), title('Forces')
+            subplot(3,1,3), 
+            plot(1:m, Data_Read), title('Raw Values'), legend('show','Location', 'northwest')
+            xlabel('Trials')
+            
+            drawnow;
+            display('start')
+            pause;
+            if ~ishandle(h)
+                break
+            end
+          end
+
+    otherwise 
+      error('Set of arguments not valid.');
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%CLOSE FUNCTION
+
+fclose(mySerial);
+fprintf('Port %s closed.\n', port);
+
+end
+
+
+
