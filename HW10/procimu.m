@@ -1,10 +1,14 @@
 function [arr] = procimu()
 colors = 'krbgcmyg';
 
+% Best noise reduction: MAF filter 
+% Least computational complexity: IIR filter
+
+
 %OPEN SERIAL COMMUNICATION
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-port = 'COM18';   % Set up serial port address
+port = 'COM21';   % Set up serial port address
 if ~isempty(instrfind)                  % If PIC is not connected
     fclose(instrfind);                  % Close serial
     delete(instrfind);                  % ...
