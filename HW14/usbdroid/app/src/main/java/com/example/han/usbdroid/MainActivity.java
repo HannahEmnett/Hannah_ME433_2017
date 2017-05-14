@@ -50,12 +50,13 @@ public class MainActivity extends AppCompatActivity {
         myTextView = (TextView) findViewById(R.id.textView01);
         myTextView.setText("Enter whatever you Like!");
 
-        setMyControlListener();
+
         myTextView2 = (TextView) findViewById(R.id.textView02);
         myScrollView = (ScrollView) findViewById(R.id.ScrollView01);
         myTextView3 = (TextView) findViewById(R.id.textView03);
         button = (Button) findViewById(R.id.button1);
-
+        
+        setMyControlListener();
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
