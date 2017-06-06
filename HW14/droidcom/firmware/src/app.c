@@ -56,6 +56,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include "app.h"
 #include <stdio.h>
 #include <xc.h>
+#include <math.h>
 
 // *****************************************************************************
 // *****************************************************************************
@@ -71,6 +72,8 @@ char rx[64]; // the raw data
 int rxPos = 0; // how much data has been stored
 int gotRx = 0; // the flag
 int rxVal = 0; // a place to store the int that was received
+double xPos=0;
+double yPos=0;
 
 // *****************************************************************************
 /* Application Data
@@ -345,6 +348,59 @@ void APP_Initialize(void) {
     appData.readBuffer = &readBuffer[0];
 
     startTime = _CP0_GET_COUNT();
+    
+    //BRUSH
+    RPA0Rbits.RPA0R = 0b0101; // A0 is OC1
+    TRISAbits.TRISA1 = 0;
+    LATAbits.LATA1 = 0; // A1 is the direction pin to go along with OC1
+
+    RPB2Rbits.RPB2R = 0b0101; // B2 is OC4
+    TRISBbits.TRISB3 = 0;
+    LATBbits.LATB3 = 0; // B3 is the direction pin to go along with OC4
+    
+    T2CONbits.TCKPS = 2; // prescaler N=4 
+    PR2 = 1200 - 1; // 10kHz
+    TMR2 = 0;
+    OC1CONbits.OCM = 0b110; // PWM mode without fault pin; other OC1CON bits are defaults
+    OC4CONbits.OCM = 0b110;
+    OC1RS = 0; // max allowed value is 1119
+    OC1R = 0; // read-only initial value
+    OC4RS = 0; // max allowed value is 1119
+    OC4R = 0; // read-only initial value
+    T2CONbits.ON = 1;
+    OC1CONbits.ON = 1;
+    OC4CONbits.ON = 1;
+    
+    //SERVO
+    RPB14Rbits.RPB14R=0b0101; //B14 is OC3
+    T3CONbits.TCKPS = 4; // prescaler N=16
+    PR3 = 60000 - 1; // 50Hz
+    TMR3 = 0;
+    OC3CONbits.OCM = 0b110; // PWM mode without fault pin; other OC1CON bits are defaults
+    OC3CONbits.OCTSEL = 1; // use timer3
+    OC3RS = 4500; // should set the motor to 90 degrees (0.5ms to 2.5ms is 1500 to 7500 for 0 to 180 degrees)
+    OC3R = 4500; // read-only
+    T3CONbits.ON = 1;
+    OC3CONbits.ON = 1;
+    
+    //LIGHTHOUSE
+    V1.prevMic = 0;
+    V1.horzAng = 0;
+    V1.vertAng = 0;
+    V1.useMe = 0;
+    V1.collected = 0;
+
+    TRISBbits.TRISB7 = 1; // connect the TS3633 ENV pin to B7
+    IC4Rbits.IC4R = 0b0100; // B7 is IC4 (input capture 4)
+    IC4CONbits.ICM = 1; // detect rising and falling edges
+    IC4CONbits.ICI = 0; // interrupt on an edge
+    IC4CONbits.ICTMR = 1; // store the value of timer2, but we're actually just using the interrupt and ignoring timer2
+    IC4CONbits.FEDGE = 0; // first event is falling edge, doesn't really matter
+    IC4CONbits.ON = 1;
+    IPC4bits.IC4IP = 5; // step 4: interrupt priority 5
+    IPC4bits.IC4IS = 1; // step 4: interrupt priority 1
+    IFS0bits.IC4IF = 0; // step 5: clear the int flag
+    IEC0bits.IC4IE = 1; // step 6: enable INT0 by setting IEC0<3>
 }
 
 /******************************************************************************
@@ -394,7 +450,26 @@ void APP_Tasks(void) {
 
             /* If a read is complete, then schedule a read
              * else wait for the current read to complete */
-
+            // when you read data from the host BRUSH
+            int reverse=0;
+            if (reverse> 50){
+            LATAbits.LATA1 = 1; // direction
+            OC1RS = 600; // velocity, 50%
+            LATBbits.LATB3 = 0; // direction
+            OC4RS = 600; // velocity, 50%
+            }
+            else {
+                LATAbits.LATA1 = 0; // direction
+                OC1RS = 600; // velocity, 50%
+                LATBbits.LATB3 = 1; // direction
+                OC4RS = 600; // velocity, 50%
+            }
+            reverse ++;
+            if (reverse==100) reverse =0;
+            //SERVO
+            OC3RS = 3500; // should set the motor to 60 degrees (0.5ms to 2.5ms is 1500 to 7500 for 0 to 180 degrees)
+            xPos = tan((V1.vertAng - 90.0) * DEG_TO_RAD) * LIGHTHOUSEHEIGHT;
+            yPos = tan((V1.horzAng - 90.0) * DEG_TO_RAD) * LIGHTHOUSEHEIGHT;
             appData.state = APP_STATE_WAIT_FOR_READ_COMPLETE;
             if (appData.isReadComplete == true) {
                 appData.isReadComplete = false;
