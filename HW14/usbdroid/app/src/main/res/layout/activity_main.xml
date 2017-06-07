@@ -7,20 +7,28 @@
     tools:context="com.example.han.usbdroid.MainActivity">
 
     <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_margin="5dp"
+        android:paddingBottom="10dp"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingTop="10dp"
+        android:orientation="vertical"
+        tools:layout_editor_absoluteY="8dp"
+        tools:layout_editor_absoluteX="8dp"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="5dp"
-        android:orientation="vertical"
         android:visibility="visible">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Hello World! It's Hannah!"
+            android:text="Adjust Green Sensitivity"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toTopOf="parent"
+            android:id="@+id/location"
             />
         <SeekBar
             android:id="@+id/seek1"
@@ -32,29 +40,27 @@
             android:paddingTop="10dp"
             android:paddingBottom="10dp"
             />
-        <TextView
-            android:id="@+id/textView01"
-            android:text="Initial Value of the Seek Bar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            />
-        <Button
-            android:id="@+id/button1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Send slider value" />
 
         <TextView
-            android:id="@+id/textView02"
-            android:text="nothing from button yet"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            />
+            android:text="Adjust Green Sensitivity"
+            android:id="@+id/cameraStatus"/>
+
+        <SurfaceView
+            android:id="@+id/surfaceview"
+            android:layout_width="640px"
+            android:layout_height="480px" />
+
+        <TextureView
+            android:id="@+id/textureview"
+            android:layout_width="4px"
+            android:layout_height="1px" />
 
         <ScrollView
             android:id="@+id/ScrollView01"
-            android:layout_width="wrap_content"
-            android:layout_height="250dip">
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
 
             <TextView
                 android:id="@+id/textView03"

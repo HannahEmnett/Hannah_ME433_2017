@@ -131,12 +131,12 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         if (c != null) {
             int thresh = progressupdate; // comparison value
             int[] pixels = new int[bmp.getWidth()]; // pixels[] is the RGBA data
-            int startY = 460; // which row in the bitmap to analyze to read
+            int startY = 400; // which row in the bitmap to analyze to read
             bmp.getPixels(pixels, 0, bmp.getWidth(), 0, startY, bmp.getWidth(), 1);
 
             // in the row, see if there is more green than red
             for (int i = 10; i < bmp.getWidth()-10; i++) {
-                if (red(pixels[i]) > thresh-100 & blue(pixels[i+1])>80) {
+                if (green(pixels[i]) -red(pixels[i])> -thresh ) {
                     pixels[i] = rgb(0, 0, 0); // over write the pixel with pure green
                     val = val + i;
                     ind++;
@@ -146,14 +146,14 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             // update the row
             bmp.setPixels(pixels, 0, bmp.getWidth(), 0, startY, bmp.getWidth(), 1);
             btm= (float) val/ind;
-            startY=20;
+            startY=100;
             val=0;
             ind=0;
             bmp.getPixels(pixels, 0, bmp.getWidth(), 0, startY, bmp.getWidth(), 1);
 
             // in the row, see if there is more green than red
             for (int i = 10; i < bmp.getWidth()-10; i++) {
-                if (red(pixels[i]) > thresh-100 & blue(pixels[i + 1]) > 80) {
+                if (green(pixels[i]) -red(pixels[i])> -thresh ) {
                     pixels[i] = rgb(0, 0, 0); // over write the pixel with pure green
                     val = val + i;
                     ind++;
@@ -168,8 +168,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         dif= Math.round(btm)- Math.round(top);
         int pos1 = Math.round(top);
         int pos2 = Math.round(btm);
-        canvas.drawCircle(pos1, 20, 5, paint1); // x position, y position, diameter, color
-        canvas.drawCircle(pos2, 460, 5, paint1); // x position, y position, diameter, color
+        canvas.drawCircle(pos1, 100, 5, paint1); // x position, y position, diameter, color
+        canvas.drawCircle(pos2, 400, 5, paint1); // x position, y position, diameter, color
 
         // write the pos as text
         canvas.drawText("Difference = " + dif, 10, 200, paint1);
