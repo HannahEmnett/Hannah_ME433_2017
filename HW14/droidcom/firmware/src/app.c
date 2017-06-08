@@ -75,11 +75,16 @@ int rxVal = 0; // a place to store the int that was received
 double xPos=0;
 double yPos=0;
 int reverse=0;
-int MAX_DUTY=700;
+int MAX_DUTY=900;
+int MIN_DUTY=75;
 int right=0;
 int left=0;
 int error=0;
-int kp=1;
+int kp=3;
+int uavg=0;
+int pu=0;
+int leftpre=0;
+int rightpre=0;
 
 // *****************************************************************************
 /* Application Data
@@ -384,8 +389,8 @@ void APP_Initialize(void) {
     TMR3 = 0;
     OC3CONbits.OCM = 0b110; // PWM mode without fault pin; other OC1CON bits are defaults
     OC3CONbits.OCTSEL = 1; // use timer3
-    OC3RS = 42500; // should set the motor to 90 degrees (0.5ms to 2.5ms is 1500 to 7500 for 0 to 180 degrees)
-    OC3R = 42500; // read-only
+    OC3RS = 4250; // should set the motor to 90 degrees (0.5ms to 2.5ms is 1500 to 7500 for 0 to 180 degrees)
+    OC3R = 4250; // read-only
     T3CONbits.ON = 1;
     OC3CONbits.ON = 1;
     /*
@@ -476,10 +481,11 @@ void APP_Tasks(void) {
             //SERVO
             //OC3RS = 3500; // should set the motor to 60 degrees (0.5ms to 2.5ms is 1500 to 7500 for 0 to 180 degrees)
             
-            if (reverse>20) OC3RS= 3750;
+            /*if (reverse>20) OC3RS= 3750;
             else OC3RS=4750;
             reverse++;
             if (reverse==40) reverse=0;
+             */
             //xPos = tan((V1.vertAng - 90.0) * DEG_TO_RAD) * LIGHTHOUSEHEIGHT;
             //yPos = tan((V1.horzAng - 90.0) * DEG_TO_RAD) * LIGHTHOUSEHEIGHT;
              
@@ -550,27 +556,52 @@ void APP_Tasks(void) {
             appData.state = APP_STATE_WAIT_FOR_WRITE_COMPLETE;
 
             if (gotRx) {
-                
-                error = rxVal - 240; // 240 means the dot is in the middle of the screen
-                if (error<0) { // slow down the left motor to steer to the left
+                 error = rxVal - 240; // 240 means the dot is in the middle of the screen
+                if ((rxVal<40) || (rxVal >600)) {
+                    left = leftpre;
+                    right = rightpre;
+                }
+                 else if (error<0) { // slow down the left motor to steer to the left
                     error  = -error;
-                    left = MAX_DUTY - kp*error;
+                    if (error> 150){
+                        left = MIN_DUTY;
+                        right = MAX_DUTY;
+                    }
+                    else {
+                    pu= kp*error;
+                    uavg=pu;
+                    //uavg=-0.05*(uavg-pu) +uavg;
+                    left = MAX_DUTY - uavg;
                     right = MAX_DUTY;
                     if (left < 0){
-                        left = 0;
+                        left = MIN_DUTY;
+                    }
                     }
                 }
                 else { // slow down the right motor to steer to the right
-                    right = MAX_DUTY - kp*error;
+                     if (error > 150){
+                         right =MIN_DUTY;
+                         left = MAX_DUTY;
+                     }
+                     else {
+                    pu= kp*error;
+                    uavg=pu;
+                    //uavg=-0.05*(uavg-pu) +uavg;
+                    right = MAX_DUTY - uavg;
                     left = MAX_DUTY;
                     if (right<0) {
-                        right = 0;
+                        right = MIN_DUTY;
                     }
+                     }
                 }
                 LATAbits.LATA1 = 0; // always go forward
                 LATBbits.LATB3 = 1;
                 OC1RS=left;
                 OC4RS=right;
+                leftpre=left;
+                rightpre=right;
+                if (left>right) OC3RS=3750;
+                else OC3RS=4750;
                 len = sprintf(dataOut, "left: %d, right: %d, rxVal: %d\r\n", left, right, rxVal);
                 i++;
                 USB_DEVICE_CDC_Write(USB_DEVICE_CDC_INDEX_0,
@@ -581,7 +612,8 @@ void APP_Tasks(void) {
                 gotRx = 0;
             } 
             else {
-                len = sprintf(dataOut, "0\r\n");
+                len=1;
+                dataOut[0]=0;
                 i++;
                 USB_DEVICE_CDC_Write(USB_DEVICE_CDC_INDEX_0,
                         &appData.writeTransferHandle, dataOut, len,
