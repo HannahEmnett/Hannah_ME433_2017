@@ -75,9 +75,11 @@ int rxVal = 0; // a place to store the int that was received
 double xPos=0;
 double yPos=0;
 int reverse=0;
-#define MAX_DUTY 1119;
+int MAX_DUTY=700;
 int right=0;
 int left=0;
+int error=0;
+int kp=1;
 
 // *****************************************************************************
 /* Application Data
@@ -352,7 +354,7 @@ void APP_Initialize(void) {
     appData.readBuffer = &readBuffer[0];
 
     startTime = _CP0_GET_COUNT();
-    /*
+    
     //BRUSH
     RPA0Rbits.RPA0R = 0b0101; // A0 is OC1 is left wheel
     TRISAbits.TRISA1 = 0;
@@ -360,7 +362,7 @@ void APP_Initialize(void) {
 
     RPB2Rbits.RPB2R = 0b0101; // B2 is OC4 is right wheel
     TRISBbits.TRISB3 = 0;
-    LATBbits.LATB3 = 0; // B3 is the direction pin to go along with OC4
+    LATBbits.LATB3 = 1; // B3 is the direction pin to go along with OC4
     
     T2CONbits.TCKPS = 2; // prescaler N=4 
     PR2 = 1200 - 1; // 10kHz
@@ -382,18 +384,18 @@ void APP_Initialize(void) {
     TMR3 = 0;
     OC3CONbits.OCM = 0b110; // PWM mode without fault pin; other OC1CON bits are defaults
     OC3CONbits.OCTSEL = 1; // use timer3
-    OC3RS = 1500; // should set the motor to 90 degrees (0.5ms to 2.5ms is 1500 to 7500 for 0 to 180 degrees)
-    OC3R = 1500; // read-only
+    OC3RS = 42500; // should set the motor to 90 degrees (0.5ms to 2.5ms is 1500 to 7500 for 0 to 180 degrees)
+    OC3R = 42500; // read-only
     T3CONbits.ON = 1;
     OC3CONbits.ON = 1;
-    
+    /*
     //LIGHTHOUSE
     V1.prevMic = 0;
     V1.horzAng = 0;
     V1.vertAng = 0;
     V1.useMe = 0;
     V1.collected = 0;
-     * */
+     
 
     TRISBbits.TRISB7 = 1; // connect the TS3633 ENV pin to B7
     IC4Rbits.IC4R = 0b0100; // B7 is IC4 (input capture 4)
@@ -406,7 +408,7 @@ void APP_Initialize(void) {
     IPC4bits.IC4IS = 1; // step 4: interrupt priority 1
     IFS0bits.IC4IF = 0; // step 5: clear the int flag
     IEC0bits.IC4IE = 1; // step 6: enable INT0 by setting IEC0<3>
-
+*/
 }
 
 /******************************************************************************
@@ -474,13 +476,13 @@ void APP_Tasks(void) {
             //SERVO
             //OC3RS = 3500; // should set the motor to 60 degrees (0.5ms to 2.5ms is 1500 to 7500 for 0 to 180 degrees)
             
-            /*if (reverse>50) OC3RS= 3500;
-            else OC3RS=5000;
+            if (reverse>20) OC3RS= 3750;
+            else OC3RS=4750;
             reverse++;
-            if (reverse==100) reverse=0;
-            xPos = tan((V1.vertAng - 90.0) * DEG_TO_RAD) * LIGHTHOUSEHEIGHT;
-            yPos = tan((V1.horzAng - 90.0) * DEG_TO_RAD) * LIGHTHOUSEHEIGHT;
-             */
+            if (reverse==40) reverse=0;
+            //xPos = tan((V1.vertAng - 90.0) * DEG_TO_RAD) * LIGHTHOUSEHEIGHT;
+            //yPos = tan((V1.horzAng - 90.0) * DEG_TO_RAD) * LIGHTHOUSEHEIGHT;
+             
             
             appData.state = APP_STATE_WAIT_FOR_READ_COMPLETE;
             if (appData.isReadComplete == true) {
@@ -502,17 +504,8 @@ void APP_Tasks(void) {
                     if (appData.readBuffer[ii] == '\n' || appData.readBuffer[ii] == '\r') {
                         rx[rxPos] = 0; // end the array
                         sscanf(rx, "%d", &rxVal); // get the int out of the array
-                        if (rxVal>0) {
-                            left=MAX_DUTY-rxVal;
-                            right=MAX_DUTY;
-                        }
-                        else {
-                            left=MAX_DUTY;
-                            right=MAX_DUTY+rxVal;
-                        }
-                        OC1RS=left;
-                        OC4RS=right;
                         gotRx = 1; // set the flag
+                        appData.readBuffer[0]=0;
                         break; // get out of the while loop
                     } else if (appData.readBuffer[ii] == 0) {
                         break; // there was no newline, get out of the while loop
@@ -557,7 +550,28 @@ void APP_Tasks(void) {
             appData.state = APP_STATE_WAIT_FOR_WRITE_COMPLETE;
 
             if (gotRx) {
-                len = sprintf(dataOut, "got: %d\r\n", rxVal);
+                
+                error = rxVal - 240; // 240 means the dot is in the middle of the screen
+                if (error<0) { // slow down the left motor to steer to the left
+                    error  = -error;
+                    left = MAX_DUTY - kp*error;
+                    right = MAX_DUTY;
+                    if (left < 0){
+                        left = 0;
+                    }
+                }
+                else { // slow down the right motor to steer to the right
+                    right = MAX_DUTY - kp*error;
+                    left = MAX_DUTY;
+                    if (right<0) {
+                        right = 0;
+                    }
+                }
+                LATAbits.LATA1 = 0; // always go forward
+                LATBbits.LATB3 = 1;
+                OC1RS=left;
+                OC4RS=right;
+                len = sprintf(dataOut, "left: %d, right: %d, rxVal: %d\r\n", left, right, rxVal);
                 i++;
                 USB_DEVICE_CDC_Write(USB_DEVICE_CDC_INDEX_0,
                         &appData.writeTransferHandle,

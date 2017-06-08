@@ -36,10 +36,13 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     private Paint paint1 = new Paint();
     private TextView mTextView;
     private SeekBar myControl;
+    private SeekBar myControl2;
     private TextView location2;
+    private TextView location3;
 
     static long prevtime = 0; // for FPS calculation
     static int progressupdate=0;
+    static int progressupdate2=0;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,7 +50,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); // keeps the screen from turning off
 
         mTextView = (TextView) findViewById(R.id.cameraStatus);
-        location2= (TextView) findViewById(R.id.location);
+        location2 = (TextView) findViewById(R.id.location);
+        location3 = (TextView) findViewById(R.id.location2);
 
         // see if the app has permission to use the camera
         ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CAMERA}, 1);
@@ -62,12 +66,13 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             paint1.setColor(0xffff0000); // red
             paint1.setTextSize(24);
             myControl = (SeekBar) findViewById(R.id.seek1);
+            myControl2 = (SeekBar) findViewById(R.id.seek2);
             setMyControlListener();
+            setMyControl2Listener();
             mTextView.setText("started camera");
         } else {
             mTextView.setText("no camera permissions");
         }
-
     }
     private void setMyControlListener() {
         myControl.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -77,8 +82,30 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 progressChanged = progress;
-                progressupdate=progressChanged;
-                location2.setText("The value is: "+progress);
+                progressupdate = progressChanged;
+                location2.setText("The value is: " + progress);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+    }
+    private void setMyControl2Listener() {
+        myControl2.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+
+            int progressChanged2 = 0;
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                progressChanged2 = progress;
+                progressupdate2 = progressChanged2;
+                location3.setText("The value is: " + progress);
             }
 
             @Override
@@ -130,39 +157,65 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         int dif=0;
         if (c != null) {
             int thresh = progressupdate; // comparison value
+            int thresh2=progressupdate2;
             int[] pixels = new int[bmp.getWidth()]; // pixels[] is the RGBA data
+            int sum_mr = 0; // the sum of the mass times the radius
+            int sum_m = 0; // the sum of the masses
             int startY = 400; // which row in the bitmap to analyze to read
             bmp.getPixels(pixels, 0, bmp.getWidth(), 0, startY, bmp.getWidth(), 1);
 
             // in the row, see if there is more green than red
             for (int i = 10; i < bmp.getWidth()-10; i++) {
-                if (green(pixels[i]) -red(pixels[i])> -thresh ) {
-                    pixels[i] = rgb(0, 0, 0); // over write the pixel with pure green
+                if (((green(pixels[i]) - red(pixels[i])) > -thresh2)&&((green(pixels[i]) - red(pixels[i])) < thresh2)&&(green(pixels[i])  > thresh)) {
+                    pixels[i] = rgb(1, 1, 1); // set the pixel to almost 100% black
+
+                    sum_m = sum_m + green(pixels[i])+red(pixels[i])+blue(pixels[i]);
+                    sum_mr = sum_mr + (green(pixels[i])+red(pixels[i])+blue(pixels[i]))*i;
+                }
+                /*if ((green(pixels[i]) +blue(pixels[i])+red(pixels[i])< 500+thresh) && (blue(pixels[i])<200) ) {
+                    pixels[i] = rgb(0, 0, 0); // over write the pixel wth pure green
                     val = val + i;
                     ind++;
-                }
+                }*/
+            }
+            if(sum_m>5){
+                btm = sum_mr / sum_m;
+            }
+            else{
+                btm = 0;
             }
 
             // update the row
             bmp.setPixels(pixels, 0, bmp.getWidth(), 0, startY, bmp.getWidth(), 1);
-            btm= (float) val/ind;
+            //btm= (float) val/ind;
             startY=100;
-            val=0;
-            ind=0;
+            //val=0;
+            //ind=0;
             bmp.getPixels(pixels, 0, bmp.getWidth(), 0, startY, bmp.getWidth(), 1);
 
             // in the row, see if there is more green than red
             for (int i = 10; i < bmp.getWidth()-10; i++) {
-                if (green(pixels[i]) -red(pixels[i])> -thresh ) {
+                /*if ((green(pixels[i]) +blue(pixels[i])+red(pixels[i])< 500+thresh) && (blue(pixels[i])<200)) {
                     pixels[i] = rgb(0, 0, 0); // over write the pixel with pure green
                     val = val + i;
                     ind++;
+                }*/
+                if (((green(pixels[i]) - red(pixels[i])) > -thresh2)&&((green(pixels[i]) - red(pixels[i])) < thresh2)&&(green(pixels[i])  > thresh)) {
+                    pixels[i] = rgb(1, 1, 1); // set the pixel to almost 100% black
+
+                    sum_m = sum_m + green(pixels[i])+red(pixels[i])+blue(pixels[i]);
+                    sum_mr = sum_mr + (green(pixels[i])+red(pixels[i])+blue(pixels[i]))*i;
                 }
             }
-
+            if(sum_m>5){
+                top = sum_mr / sum_m;
+            }
+            else{
+                top = 0;
+            }
             // update the row
             bmp.setPixels(pixels, 0, bmp.getWidth(), 0, startY, bmp.getWidth(), 1);
-            top= (float) val/ind;
+            //top= (float) val/ind;
         }
         // draw a circle at some position
         dif= Math.round(btm)- Math.round(top);

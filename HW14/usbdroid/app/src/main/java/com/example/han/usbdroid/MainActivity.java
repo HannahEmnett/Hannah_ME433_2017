@@ -49,9 +49,10 @@ import static android.graphics.Color.red;
 import static android.graphics.Color.rgb;
 
 public class MainActivity extends Activity implements TextureView.SurfaceTextureListener {
-    SeekBar myControl;
+    private SeekBar myControl;
+    private SeekBar myControl2;
     //TextView myTextView;
-    Button button;
+    //Button button;
     //TextView myTextView2;
     ScrollView myScrollView;
     TextView myTextView3;
@@ -68,9 +69,11 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     private Paint paint1 = new Paint();
     private TextView mTextView;
     private TextView location2;
+    private TextView location3;
 
     static long prevtime = 0; // for FPS calculation
     static int progressupdate=0;
+    static int progressupdate2=0;
     static int dif=0;
 
     @Override
@@ -83,7 +86,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         //myTextView.setText("Enter whatever you Like!");
         mTextView = (TextView) findViewById(R.id.cameraStatus);
         location2= (TextView) findViewById(R.id.location);
-
+        location3 = (TextView) findViewById(R.id.location2);
 
         //myTextView2 = (TextView) findViewById(R.id.textView02);
         myScrollView = (ScrollView) findViewById(R.id.ScrollView01);
@@ -103,7 +106,9 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             paint1.setColor(0xffff0000); // red
             paint1.setTextSize(24);
             myControl = (SeekBar) findViewById(R.id.seek1);
+            myControl2 = (SeekBar) findViewById(R.id.seek2);
             setMyControlListener();
+            setMyControl2Listener();
             mTextView.setText("started camera");
         } else {
             mTextView.setText("no camera permissions");
@@ -145,7 +150,28 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             }
         });
     }
+    private void setMyControl2Listener() {
+        myControl2.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
+            int progressChanged2 = 0;
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                progressChanged2 = progress;
+                progressupdate2 = progressChanged2;
+                location3.setText("The value is: " + progress);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+    }
     private final SerialInputOutputManager.Listener mListener =
             new SerialInputOutputManager.Listener() {
                 @Override
@@ -291,51 +317,81 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         int ind=0;
         float btm= 0;
         float top=0;
+        float COM=0;
         if (c != null) {
             int thresh = progressupdate; // comparison value
+            int thresh2=progressupdate2;
             int[] pixels = new int[bmp.getWidth()]; // pixels[] is the RGBA data
-            int startY = 400; // which row in the bitmap to analyze to read
+            int sum_mr = 0; // the sum of the mass times the radius
+            int sum_m = 0; // the sum of the masses
+            int startY = 250; // which row in the bitmap to analyze to read
+
             bmp.getPixels(pixels, 0, bmp.getWidth(), 0, startY, bmp.getWidth(), 1);
 
             // in the row, see if there is more green than red
-            for (int i = 10; i < bmp.getWidth()-10; i++) {
-                if (red(pixels[i]) > thresh-50 & blue(pixels[i+1])>50) {
-                    pixels[i] = rgb(0, 0, 0); // over write the pixel with pure green
+            for (int i = 0; i < bmp.getWidth(); i++) {
+                if (((green(pixels[i]) - red(pixels[i])) > -thresh2)&&((green(pixels[i]) - red(pixels[i])) < thresh2)&&(green(pixels[i])  > thresh)) {
+                    pixels[i] = rgb(1, 1, 1); // set the pixel to almost 100% black
+
+                    sum_m = sum_m + green(pixels[i])+red(pixels[i])+blue(pixels[i]);
+                    sum_mr = sum_mr + (green(pixels[i])+red(pixels[i])+blue(pixels[i]))*i;
+                }
+                /*if ((green(pixels[i]) +blue(pixels[i])+red(pixels[i])< 500+thresh) && (blue(pixels[i])<200) ) {
+                    pixels[i] = rgb(0, 0, 0); // over write the pixel wth pure green
                     val = val + i;
                     ind++;
-                }
+                }*/
+            }
+            if(sum_m>5){
+                COM = sum_mr / sum_m;
+            }
+            else{
+                COM = 0;
             }
 
             // update the row
             bmp.setPixels(pixels, 0, bmp.getWidth(), 0, startY, bmp.getWidth(), 1);
-            btm= (float) val/ind;
+            //btm= (float) val/ind;
+            /*
             startY=100;
-            val=0;
-            ind=0;
+            //val=0;
+            //ind=0;
             bmp.getPixels(pixels, 0, bmp.getWidth(), 0, startY, bmp.getWidth(), 1);
 
             // in the row, see if there is more green than red
             for (int i = 10; i < bmp.getWidth()-10; i++) {
-                if (red(pixels[i]) > thresh-50 & blue(pixels[i + 1]) > 50) {
+                /*if ((green(pixels[i]) +blue(pixels[i])+red(pixels[i])< 500+thresh) && (blue(pixels[i])<200)) {
                     pixels[i] = rgb(0, 0, 0); // over write the pixel with pure green
                     val = val + i;
                     ind++;
+                }*/
+                /*if (((green(pixels[i]) - red(pixels[i])) > -thresh2)&&((green(pixels[i]) - red(pixels[i])) < thresh2)&&(green(pixels[i])  > thresh)) {
+                    pixels[i] = rgb(1, 1, 1); // set the pixel to almost 100% black
+
+                    sum_m = sum_m + green(pixels[i])+red(pixels[i])+blue(pixels[i]);
+                    sum_mr = sum_mr + (green(pixels[i])+red(pixels[i])+blue(pixels[i]))*i;
                 }
             }
-
+            if(sum_m>5){
+                top = sum_mr / sum_m;
+            }
+            else{
+                top = 0;
+            }
             // update the row
             bmp.setPixels(pixels, 0, bmp.getWidth(), 0, startY, bmp.getWidth(), 1);
-            top= (float) val/ind;
+            */
+            //top= (float) val/ind;
         }
         // draw a circle at some position
-        dif= Math.round(btm)- Math.round(top);
-        int pos1 = Math.round(top);
-        int pos2 = Math.round(btm);
-        canvas.drawCircle(pos1, 20, 5, paint1); // x position, y position, diameter, color
-        canvas.drawCircle(pos2, 460, 5, paint1); // x position, y position, diameter, color
+        //dif= Math.round(btm)- Math.round(top);
+        //int pos1 = Math.round(top);
+        //int pos2 = Math.round(btm);
+        canvas.drawCircle(COM, 250, 5, paint1); // x position, y position, diameter, color
+        //canvas.drawCircle(pos2, 400, 5, paint1); // x position, y position, diameter, color
 
         // write the pos as text
-        canvas.drawText("Difference = " + dif, 10, 200, paint1);
+        canvas.drawText("COM = " + COM, 10, 200, paint1);
         c.drawBitmap(bmp, 0, 0, null);
         mSurfaceHolder.unlockCanvasAndPost(c);
 
@@ -346,7 +402,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         prevtime = nowtime;
 
 
-        String sendString = String.valueOf(dif) + '\n';
+        String sendString = String.valueOf(COM) + '\n';
         try {
             sPort.write(sendString.getBytes(), 10); // 10 is the timeout
         } catch (IOException e) { }
