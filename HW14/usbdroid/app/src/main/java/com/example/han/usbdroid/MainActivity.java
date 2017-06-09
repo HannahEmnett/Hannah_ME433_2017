@@ -327,7 +327,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
             // in the row, see if there is more green than red
             for (int i = 0; i < bmp.getWidth(); i++) {
-                if (((green(pixels[i]) - red(pixels[i])) > -thresh2)&&((green(pixels[i]) - red(pixels[i])) < thresh2)&&(green(pixels[i])  > thresh)) {
+                if (((blue(pixels[i]) - red(pixels[i])) > -thresh2)&&((blue(pixels[i]) - red(pixels[i])) < thresh2)&&(blue(pixels[i])  > thresh)) {
                     pixels[i] = rgb(1, 1, 1); // set the pixel to almost 100% black
 
                     sum_m = sum_m + green(pixels[i])+red(pixels[i])+blue(pixels[i]);
@@ -366,17 +366,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         prevtime = nowtime;
 
         if (COM ==0) {
-            COM=5;
-        }
-        if ((COM==5) || (COM==640)){
-            try
-            {
-                Thread.sleep(100);
-            }
-            catch(InterruptedException ex)
-            {
-                Thread.currentThread().interrupt();
-            }
+            COM = 5;
         }
         String sendString = String.valueOf(COM) + '\n';
         try {

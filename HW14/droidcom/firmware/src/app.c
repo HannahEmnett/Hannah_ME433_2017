@@ -75,8 +75,8 @@ int rxVal = 0; // a place to store the int that was received
 double xPos=0;
 double yPos=0;
 int reverse=0;
-int MAX_DUTY=900;
-int MIN_DUTY=75;
+int MAX_DUTY=850;
+int MIN_DUTY=50;
 int right=0;
 int left=0;
 int error=0;
@@ -563,7 +563,7 @@ void APP_Tasks(void) {
                 }
                  else if (error<0) { // slow down the left motor to steer to the left
                     error  = -error;
-                    if (error> 150){
+                    if (error> 125){
                         left = MIN_DUTY;
                         right = MAX_DUTY;
                     }
@@ -579,7 +579,7 @@ void APP_Tasks(void) {
                     }
                 }
                 else { // slow down the right motor to steer to the right
-                     if (error > 150){
+                     if (error > 125){
                          right =MIN_DUTY;
                          left = MAX_DUTY;
                      }
